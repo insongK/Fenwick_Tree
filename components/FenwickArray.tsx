@@ -151,7 +151,7 @@ export default function FenwickArray({
       {/* BIT 배열 */}
       <div>
         <p className="text-gray-400 text-xs mb-2">팬윅 트리 배열 tree[]</p>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap justify-center">
           {Array.from({ length: size }, (_, i) => i + 1).map((idx) => {
             const [start, end] = getResponsibleRange(idx);
             return (
