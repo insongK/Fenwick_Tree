@@ -81,7 +81,7 @@ export default function TreeVisualizer({
         블록 너비 = 담당 범위 크기 (lowbit 값) | 위로 갈수록 상위 노드
       </p>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex justify-center">
         <div style={{ position: "relative", width: totalWidth, height: svgHeight }}>
           {/* 연결선 SVG */}
           <svg

@@ -30,6 +30,10 @@ export default function ArrayInput({ onBuild }: Props) {
     });
   };
 
+  const handleSequential = () => {
+    setValues(Array(size).fill(0).map((_, i) => String(i + 1)));
+  };
+
   const handleRandom = () => {
     setValues(Array(size).fill(0).map(() => String(Math.floor(Math.random() * 20) + 1)));
   };
@@ -73,7 +77,13 @@ export default function ArrayInput({ onBuild }: Props) {
       </div>
 
       {/* 버튼 */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={handleSequential}
+          className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors"
+        >
+          1~{size} 채우기
+        </button>
         <button
           onClick={handleRandom}
           className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors"

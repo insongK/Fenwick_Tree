@@ -130,7 +130,7 @@ export default function FenwickArray({
           원본 배열 a[]{" "}
           <span className="text-blue-400">— 클릭하여 위치 선택</span>
         </p>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap justify-center">
           {Array.from({ length: size }, (_, i) => i + 1).map((idx) => (
             <div key={idx} className="flex flex-col items-center gap-1">
               <span className="text-gray-500 text-xs">{idx}</span>
