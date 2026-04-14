@@ -1,64 +1,194 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import ArrayInput from "@/components/ArrayInput";
+import FenwickArray from "@/components/FenwickArray";
+import TreeVisualizer from "@/components/TreeVisualizer";
+import OperationPanel, { OperationType } from "@/components/OperationPanel";
+import StepExplainer from "@/components/StepExplainer";
+import {
+  buildFenwick,
+  FenwickState,
+  getUpdateSteps,
+  getQuerySteps,
+  getRangeQuerySteps,
+  Step,
+} from "@/lib/fenwick";
 
 export default function Home() {
+  const [fenwick, setFenwick] = useState<FenwickState | null>(null);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [currentStep, setCurrentStep] = useState(-1);
+  const [result, setResult] = useState<number | null>(null);
+  const [opLabel, setOpLabel] = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(800);
+  const playRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 하이라이트: 현재 스텝의 인덱스
+  const highlightIndices =
+    currentStep >= 0 && currentStep < steps.length
+      ? [steps[currentStep].index]
+      : [];
+  const highlightType =
+    currentStep >= 0 && currentStep < steps.length
+      ? steps[currentStep].type
+      : "none";
+
+  const handleBuild = (arr: number[]) => {
+    const state = buildFenwick(arr);
+    setFenwick(state);
+    resetSteps();
+  };
+
+  const resetSteps = () => {
+    setSteps([]);
+    setCurrentStep(-1);
+    setResult(null);
+    setOpLabel("");
+    setIsPlaying(false);
+    if (playRef.current) clearTimeout(playRef.current);
+  };
+
+  const handleOperate = (op: OperationType, params: number[]) => {
+    if (!fenwick) return;
+    resetSteps();
+
+    if (op === "update") {
+      const [pos, delta] = params;
+      const { steps: s, newState } = getUpdateSteps(fenwick, pos, delta);
+      setSteps(s);
+      setCurrentStep(0);
+      setFenwick(newState);
+      setResult(null);
+      setOpLabel(`update(${pos}, ${delta > 0 ? "+" : ""}${delta})`);
+    } else if (op === "prefix") {
+      const [pos] = params;
+      const { steps: s, result: r } = getQuerySteps(fenwick, pos);
+      setSteps(s);
+      setCurrentStep(0);
+      setResult(r);
+      setOpLabel(`prefixSum(1 ~ ${pos})`);
+    } else {
+      const [l, r] = params;
+      const { stepsR, stepsL, result: res } = getRangeQuerySteps(fenwick, l, r);
+      // range query: R query 먼저 → L-1 query
+      const combined = [...stepsR, ...stepsL];
+      setSteps(combined);
+      setCurrentStep(0);
+      setResult(res);
+      setOpLabel(`rangeSum(${l} ~ ${r})`);
+    }
+  };
+
+  // 자동 재생
+  const playNext = useCallback(() => {
+    setCurrentStep((prev) => {
+      if (prev + 1 >= steps.length) {
+        setIsPlaying(false);
+        return prev + 1; // "done" 상태
+      }
+      return prev + 1;
+    });
+  }, [steps.length]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      if (playRef.current) clearTimeout(playRef.current);
+      return;
+    }
+    if (currentStep >= steps.length) {
+      setIsPlaying(false);
+      return;
+    }
+    playRef.current = setTimeout(playNext, speed);
+    return () => {
+      if (playRef.current) clearTimeout(playRef.current);
+    };
+  }, [isPlaying, currentStep, steps.length, speed, playNext]);
+
+  const handlePrev = () => {
+    setIsPlaying(false);
+    setCurrentStep((p) => Math.max(0, p - 1));
+  };
+  const handleNext = () => {
+    setIsPlaying(false);
+    setCurrentStep((p) => Math.min(steps.length, p + 1));
+  };
+  const handlePlay = () => setIsPlaying(true);
+  const handlePause = () => setIsPlaying(false);
+  const handleReset = () => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* 헤더 */}
+      <header className="border-b border-gray-700 px-6 py-4">
+        <h1 className="text-2xl font-bold tracking-tight">
+          Fenwick Tree{" "}
+          <span className="text-blue-400">Simulator</span>
+        </h1>
+        <p className="text-gray-400 text-sm mt-0.5">
+          Binary Indexed Tree (BIT) 시각화 & 단계별 시뮬레이터
+        </p>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        {/* 상단: 배열 설정 + 연산 + 스텝 설명 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-1 space-y-4">
+            <ArrayInput onBuild={handleBuild} />
+            <OperationPanel
+              size={fenwick?.size ?? 8}
+              disabled={!fenwick}
+              onOperate={handleOperate}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <div className="lg:col-span-2">
+            <StepExplainer
+              steps={steps}
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              isPlaying={isPlaying}
+              speed={speed}
+              result={result}
+              opLabel={opLabel}
+              onPrev={handlePrev}
+              onNext={handleNext}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onReset={handleReset}
+              onSpeedChange={setSpeed}
+            />
+          </div>
         </div>
+
+        {/* 하단: 배열 시각화 + 트리 구조 */}
+        {fenwick && (
+          <div className="space-y-4">
+            <FenwickArray
+              original={fenwick.original}
+              tree={fenwick.tree}
+              size={fenwick.size}
+              highlightIndices={highlightIndices}
+              highlightType={highlightType as "update" | "query" | "none"}
+            />
+            <TreeVisualizer
+              tree={fenwick.tree}
+              size={fenwick.size}
+              highlightIndices={highlightIndices}
+              highlightType={highlightType as "update" | "query" | "none"}
+            />
+          </div>
+        )}
+
+        {!fenwick && (
+          <div className="flex items-center justify-center h-40 border-2 border-dashed border-gray-700 rounded-xl text-gray-500">
+            배열을 설정하고 트리 빌드 버튼을 눌러 시작하세요.
+          </div>
+        )}
       </main>
     </div>
   );
