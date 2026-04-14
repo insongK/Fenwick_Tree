@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ArrayInput from "@/components/ArrayInput";
-import FenwickArray from "@/components/FenwickArray";
+import FenwickArray, { OperationType } from "@/components/FenwickArray";
 import TreeVisualizer from "@/components/TreeVisualizer";
-import OperationPanel, { OperationType } from "@/components/OperationPanel";
 import StepExplainer from "@/components/StepExplainer";
 import {
   buildFenwick,
@@ -140,11 +139,6 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-1 space-y-4">
             <ArrayInput onBuild={handleBuild} />
-            <OperationPanel
-              size={fenwick?.size ?? 8}
-              disabled={!fenwick}
-              onOperate={handleOperate}
-            />
           </div>
           <div className="lg:col-span-2">
             <StepExplainer
@@ -174,6 +168,7 @@ export default function Home() {
               size={fenwick.size}
               highlightIndices={highlightIndices}
               highlightType={highlightType as "update" | "query" | "none"}
+              onOperate={handleOperate}
             />
             <TreeVisualizer
               tree={fenwick.tree}
